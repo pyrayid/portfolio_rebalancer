@@ -39,6 +39,7 @@ stocks_list = [
 ]
 
 st.title("Portfolio Rebalancer")
+st.markdown("Build a re-balanced stock portfolio that achieves growth and stability by maintaing a portfolio of 30 stocks with equal weight for each stock. These stocks have been selected for their growth potential and stability. Invest or withdraw cash from these stocks based on your needs but remain consistent to achieve long term growth. Disclaimer: Do your own research before making any investment decisions.")
 
 # User Input
 st.header("Current Portfolio")
