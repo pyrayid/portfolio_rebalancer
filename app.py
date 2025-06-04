@@ -3,6 +3,7 @@ import pandas as pd
 import yfinance as yf
 import numpy as np
 from datetime import date
+import plotly.express as px
 
 stocks_list = [
     "AAPL",
@@ -39,7 +40,10 @@ stocks_list = [
 ]
 
 st.title("Portfolio Rebalancer")
-st.markdown("Build a re-balanced stock portfolio that achieves growth and stability by maintaing a portfolio of 30 stocks with equal weight for each stock. These stocks have been selected for their growth potential and stability. Invest or withdraw cash from these stocks based on your needs but remain consistent to achieve long term growth. Disclaimer: Do your own research before making any investment decisions.")
+st.markdown(
+    "Rebalance your portfolio with this tool: <br>1. Enter the amount of cash you want to invest or withdraw. <br>2. Current portfolio is prepopulated with a balanced portfolio of 30+ stocks selected for their growth potential and stability. You can update this with your own portfolio and click calculate. <br><br>The chart will show how your portfolio would have grown over the past 60 months compared to the balanced portfolio. The rebalancing recommendations will suggest how to invest or withdraw cash based on stock prices today and the optimization method selected.",
+    unsafe_allow_html=True,
+)
 
 # User Input
 st.header("Current Portfolio")
@@ -53,9 +57,13 @@ if portfolio_input_method == "Manual Entry":
     portfolio_df = pd.DataFrame(
         {"Symbol": stocks_list, "Shares": [0] * len(stocks_list)}
     )
-    portfolio_df = st.data_editor(portfolio_df, num_rows="fixed", disabled=["Symbol"])
+    portfolio_df = st.data_editor(
+        portfolio_df, num_rows="dynamic", hide_index=False
+    )  # , num_rows="fixed", disabled=["Symbol"])
 elif portfolio_input_method == "Upload CSV":
-    uploaded_file = st.file_uploader("Upload portfolio CSV(Symbol,Shares)", type=["csv"])
+    uploaded_file = st.file_uploader(
+        "Upload portfolio CSV(Symbol,Shares)", type=["csv"]
+    )
 
     if uploaded_file is not None:
         try:
@@ -75,7 +83,10 @@ elif portfolio_input_method == "Upload CSV":
                     if any(match):  # Check if there's at least one match
                         portfolio_df.loc[match, "Shares"] = shares
                 portfolio_df = st.data_editor(
-                    portfolio_df, num_rows="fixed", disabled=["Symbol"]
+                    portfolio_df,
+                    num_rows="fixed",
+                    disabled=["Symbol"],
+                    hide_index=False,
                 )
             else:
                 st.error("Uploaded CSV must contain 'Symbol' and 'Shares' columns.")
@@ -85,6 +96,7 @@ else:
     portfolio_df = pd.DataFrame(
         {"Symbol": stocks_list, "Shares": [0] * len(stocks_list)}
     )
+    portfolio_df = st.data_editor(portfolio_df, num_rows="dynamic", hide_index=False)
 
 
 # Sidebar Input
@@ -95,7 +107,9 @@ with st.sidebar:
         f"Amount to {investment_type.lower()}", value=0.0, step=0.01
     )
     # amount_type = st.selectbox("Amount type", ["Amount", "Percentage"])
-    # time_period = st.number_input("Time period (days)", value=30, step=1)
+    optimization_method = st.selectbox(
+        "Select optimization method", ["Equal Weight", "Hierarchical Risk Parity"]
+    )
 
     if investment_type == "Invest":
         cash_to_invest = amount
@@ -107,15 +121,14 @@ with st.sidebar:
     st.write(f"Total cash to invest:        ${cash_to_invest:,.2f}")
     st.write(f"Total cash to withdraw:      ${cash_to_withdraw:,.2f}")
 
-def calculate_portfolio_rebalance(portfolio_df, amount, cash_to_invest, cash_to_withdraw):
+
+def calculate_portfolio_rebalance(
+    portfolio_df, amount, cash_to_invest, cash_to_withdraw, optimization_method
+):
     # Create DataFrame from user input
     df_positions = portfolio_df.rename(columns={"Shares": "Quantity"})
 
-    if amount == 0:
-        st.error("Amount to invest/withdraw cannot be zero.")
-        return
-    
-    df = pd.DataFrame({"Symbol": stocks_list})
+    df = pd.DataFrame({"Symbol": portfolio_df["Symbol"].tolist()})
     df = df.merge(df_positions, on="Symbol", how="left").fillna(
         {"Description": "", "Quantity": 0, "Current Value": 0.0}
     )
@@ -144,10 +157,38 @@ def calculate_portfolio_rebalance(portfolio_df, amount, cash_to_invest, cash_to_
     df["Current Value"] = df["Quantity"] * df["price"]
 
     # === Buying logic ===
+    if optimization_method == "Equal Weight":
+        # Equal weight for each ticker
+        equal_weight = 1.0 / len(stocks_list)
+        df["target_weight"] = equal_weight
+    elif optimization_method == "Hierarchical Risk Parity":
+        # HRP logic from folio_optimizer.py
+        from pypfopt import HRPOpt
+        from pypfopt.expected_returns import mean_historical_return
+        from pypfopt.risk_models import CovarianceShrinkage
 
-    # Equal weight for each ticker
-    equal_weight = 1.0 / len(stocks_list)
-    df["target_weight"] = equal_weight
+        # Fetch historical data
+        tickers = portfolio_df["Symbol"].tolist()
+        data = yf.download(tickers, period="144mo", progress=False)
+        monthly_prices = data["Close"].resample("ME").last().dropna()
+        returns = monthly_prices.pct_change().dropna()
+
+        # Estimate expected returns and covariance matrix
+        mu = mean_historical_return(monthly_prices)
+        S = CovarianceShrinkage(monthly_prices).ledoit_wolf()
+
+        # Hierarchical Risk Parity Portfolio
+        hrp = HRPOpt(returns, S)
+        hrp.optimize()
+        hrp_weights = hrp.clean_weights()
+
+        # Assign HRP weights to the DataFrame
+        df["target_weight"] = df["Symbol"].apply(
+            lambda x: hrp_weights.get(x, 0)
+        )  # Use get to handle missing keys
+    else:
+        st.error("Invalid optimization method selected.")
+        return
 
     # Compute current weights
     current_value_total = df["Current Value"].sum()
@@ -217,19 +258,29 @@ def calculate_portfolio_rebalance(portfolio_df, amount, cash_to_invest, cash_to_
         )
         # rename df["sell_allocation_overweight"] to "sell_allocation"
         df.rename(
-            columns={"sell_allocation_overweight": "sell_allocation"}, inplace=True
+            columns={
+                "sell_allocation_overweight": "Withdrawal Amount"}, inplace=True,
+        )
+
+        df.rename(
+            columns={
+                "buy_allocation": "Investment Amount",
+                "shares_to_buy": "Shares to Buy",
+                "shares_to_sell": "Shares to Sell",
+            },
+            inplace=True,
         )
 
     # Display results
-    st.header("Portfolio Rebalance Recommendations")
+    st.header("Rebalance Recommendations")
 
     invest_columns = [
         "Symbol",
         "price",
         "Quantity",
         "Current Value",
-        "buy_allocation",
-        "shares_to_buy",
+        "Investment Amount",
+        "Shares to Buy",
     ]
 
     withdraw_columns = [
@@ -237,16 +288,16 @@ def calculate_portfolio_rebalance(portfolio_df, amount, cash_to_invest, cash_to_
         "price",
         "Quantity",
         "Current Value",
-        "sell_allocation",
-        "shares_to_sell",
+        "Withdrawal Amount",
+        "Shares to Sell",
     ]
 
     if investment_type == "Invest":
         columns_to_display = invest_columns
+        st.dataframe(df[columns_to_display])
     else:
         columns_to_display = withdraw_columns
-
-    st.dataframe(df[columns_to_display])
+        st.dataframe(df[columns_to_display])
 
     # Download CSV
     csv = df[columns_to_display].to_csv(index=False)
@@ -257,5 +308,123 @@ def calculate_portfolio_rebalance(portfolio_df, amount, cash_to_invest, cash_to_
         mime="text/csv",
     )
 
+
+def plot_portfolio_growth(
+    balanced_stocks, portfolio_stocks, initial_investment=10000, months=60
+):
+    """
+    Plots the portfolio growth for the past 60 months, starting with an initial investment.
+    """
+    end_date = date.today()
+    start_date = pd.to_datetime(end_date) - pd.DateOffset(months=months)
+
+    # Fetch monthly price data for the stocks and SPX
+    data = yf.download(
+        balanced_stocks + ["^GSPC"], start=start_date, end=end_date, interval="1mo"
+    )
+
+    # Calculate the portfolio value for each month
+    portfolio_value = pd.DataFrame(index=data.index)
+    portfolio_value["Balanced Portfolio"] = 0
+
+    for i, row in data.iterrows():
+        # Calculate the portfolio value for the current month
+        stock_prices = row["Close"][balanced_stocks]
+        portfolio_value.loc[i, "Balanced Portfolio"] = (
+            stock_prices * (initial_investment / len(balanced_stocks))
+        ).sum()
+
+    # Normalize the portfolio value and SPX value to start at initial_investment
+    portfolio_value["Balanced Portfolio"] = (
+        portfolio_value["Balanced Portfolio"]
+        / portfolio_value["Balanced Portfolio"].iloc[0]
+        * initial_investment
+    )
+    data_spx = data["Close"]["^GSPC"]
+    data_spx = data_spx / data_spx.iloc[0] * initial_investment
+
+    # Create a Pandas DataFrame to store the portfolio value and SPX value over time
+    df = pd.DataFrame(
+        {"Balanced Portfolio": portfolio_value["Balanced Portfolio"], "SPX": data_spx}
+    )
+
+    # Add "Current Portfolio" if portfolio_stocks is different from stocks
+    current_portfolio_better = False
+    if balanced_stocks != portfolio_stocks:
+        data_current = yf.download(
+            portfolio_stocks + ["^GSPC"], start=start_date, end=end_date, interval="1mo"
+        )
+        portfolio_value["Current Portfolio"] = 0
+        for i, row in data_current.iterrows():
+            stock_prices = row["Close"][portfolio_stocks]
+            portfolio_value.loc[i, "Current Portfolio"] = (
+                stock_prices * (initial_investment / len(portfolio_stocks))
+            ).sum()
+        portfolio_value["Current Portfolio"] = (
+            portfolio_value["Current Portfolio"]
+            / portfolio_value["Current Portfolio"].iloc[0]
+            * initial_investment
+        )
+        df["Current Portfolio"] = portfolio_value["Current Portfolio"]
+
+    df.index.name = "Date"
+    df = df.reset_index()
+
+    # Plot the portfolio growth and SPX growth using streamlit
+    y_columns = ["Balanced Portfolio", "SPX"]
+    if "Current Portfolio" in df.columns:
+        y_columns.append("Current Portfolio")
+        # if the last value of "Current Portfolio" is greater than the last value of "Balanced Portfolio", set current_portfolio_better to True
+        if df["Current Portfolio"].iloc[-1] > df["Balanced Portfolio"].iloc[-1]:
+            current_portfolio_better = True
+        else:
+            current_portfolio_better = False
+
+    fig = px.line(
+        df,
+        x="Date",
+        y=y_columns,
+        title="Portfolio Growth vs SPX for 10k invested 5 years ago",
+    )
+    st.plotly_chart(fig)
+
+    return current_portfolio_better
+
+
 if st.button("Calculate"):
-    calculate_portfolio_rebalance(portfolio_df, amount, cash_to_invest, cash_to_withdraw)
+    if amount == 0:
+        st.error("Amount to invest/withdraw cannot be zero.")
+    else:
+        current_portfolio_better = plot_portfolio_growth(
+            stocks_list, portfolio_df["Symbol"].tolist()
+        )
+        if not current_portfolio_better and cash_to_invest > 0:
+            # Invest all cash in the balanced portfolio
+            st.success(
+                "Balaced portfolio performed better! Rebalancing recommendations will be for this portfolio."
+            )
+            balanced_portfolio_df = pd.DataFrame(
+                {"Symbol": stocks_list, "Shares": [0] * len(stocks_list)}
+            )
+            calculate_portfolio_rebalance(
+                balanced_portfolio_df,
+                amount,
+                cash_to_invest,
+                cash_to_withdraw,
+                optimization_method,
+            )
+        else:
+            if cash_to_invest > 0:
+                st.success(
+                    "Your current portfolio performed better! Rebalancing recommendations will be for this portfolio."
+                )
+            calculate_portfolio_rebalance(
+                portfolio_df,
+                amount,
+                cash_to_invest,
+                cash_to_withdraw,
+                optimization_method,
+            )
+
+# if st.button("Plot Portfolio Growth"):
+#     plot_portfolio_growth(stocks_list)
