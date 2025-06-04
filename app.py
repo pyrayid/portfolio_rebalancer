@@ -163,9 +163,9 @@ def calculate_portfolio_rebalance(
         df["target_weight"] = equal_weight
     elif optimization_method == "Hierarchical Risk Parity":
         # HRP logic from folio_optimizer.py
-        from pypfopt import HRPOpt
-        from pypfopt.expected_returns import mean_historical_return
-        from pypfopt.risk_models import CovarianceShrinkage
+        from pypfopt.hierarchical_portfolio import HRPOpt
+        # from pypfopt.expected_returns import mean_historical_return
+        # from pypfopt.risk_models import CovarianceShrinkage
 
         # Fetch historical data
         tickers = portfolio_df["Symbol"].tolist()
@@ -173,9 +173,9 @@ def calculate_portfolio_rebalance(
         monthly_prices = data["Close"].resample("ME").last().dropna()
         returns = monthly_prices.pct_change().dropna()
 
-        # Estimate expected returns and covariance matrix
-        mu = mean_historical_return(monthly_prices)
-        S = CovarianceShrinkage(monthly_prices).ledoit_wolf()
+        # # Estimate expected returns and covariance matrix
+        # mu = mean_historical_return(monthly_prices)
+        # S = CovarianceShrinkage(monthly_prices).ledoit_wolf()
 
         # Hierarchical Risk Parity Portfolio
         hrp = HRPOpt(returns, S)
