@@ -165,7 +165,7 @@ def calculate_portfolio_rebalance(
         # HRP logic from folio_optimizer.py
         from pypfopt.hierarchical_portfolio import HRPOpt
         # from pypfopt.expected_returns import mean_historical_return
-        # from pypfopt.risk_models import CovarianceShrinkage
+        from pypfopt.risk_models import CovarianceShrinkage
 
         # Fetch historical data
         tickers = portfolio_df["Symbol"].tolist()
@@ -175,7 +175,7 @@ def calculate_portfolio_rebalance(
 
         # # Estimate expected returns and covariance matrix
         # mu = mean_historical_return(monthly_prices)
-        # S = CovarianceShrinkage(monthly_prices).ledoit_wolf()
+        S = CovarianceShrinkage(monthly_prices).ledoit_wolf()
 
         # Hierarchical Risk Parity Portfolio
         hrp = HRPOpt(returns, S)
