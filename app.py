@@ -258,8 +258,8 @@ def calculate_portfolio_rebalance(
         )
         # rename df["sell_allocation_overweight"] to "sell_allocation"
         df.rename(
-            columns={
-                "sell_allocation_overweight": "Withdrawal Amount"}, inplace=True,
+            columns={"sell_allocation_overweight": "Withdrawal Amount"},
+            inplace=True,
         )
 
         df.rename(
@@ -401,7 +401,7 @@ if st.button("Calculate"):
         if not current_portfolio_better and cash_to_invest > 0:
             # Invest all cash in the balanced portfolio
             st.success(
-                "Balaced portfolio performed better! Rebalancing recommendations will be for this portfolio."
+                "Equal Weight Balaced portfolio performed better! Rebalancing recommendations will be based on the balanced portfolio."
             )
             balanced_portfolio_df = pd.DataFrame(
                 {"Symbol": stocks_list, "Shares": [0] * len(stocks_list)}
@@ -416,7 +416,7 @@ if st.button("Calculate"):
         else:
             if cash_to_invest > 0:
                 st.success(
-                    "Your current portfolio performed better! Rebalancing recommendations will be for this portfolio."
+                    "Your current portfolio performed better! Rebalancing recommendations will be based on your current portfolio."
                 )
             calculate_portfolio_rebalance(
                 portfolio_df,
