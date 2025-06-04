@@ -3,4 +3,4 @@ pandas
 yfinance
 numpy
 plotly[express]
-PyPortfolioOpt
+PyPortfolioOpt==1.5.6

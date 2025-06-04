@@ -1,0 +1,23 @@
+﻿Account Number,Account Name,Symbol,Description,Quantity,Last Price,Last Price Change,Current Value,Today's Gain/Loss Dollar,Today's Gain/Loss Percent,Total Gain/Loss Dollar,Total Gain/Loss Percent,Percent Of Account,Cost Basis Total,Average Cost Basis,Type
+1234567,BrokerageLink,FDRXX**,HELD IN MONEY MARKET,,,,"$119,970.84 ",,,,,63.59%,,,Cash
+1234567,BrokerageLink,RDDT,REDDIT INC CL A,202,$122.32 ,$1.11 ,"$24,708.64 ",$224.22 ,0.91%,"$16,794.18 ",212.19%,13.10%,"$7,914.46 ",$39.18 ,Cash
+1234567,BrokerageLink,UBER,UBER TECHNOLOGIES INC COM,1,$79.63 ,$1.30 ,$79.63 ,$1.30 ,1.66%,$19.63 ,32.72%,0.04%,$60.00 ,$60.00 ,Cash
+1234567,BrokerageLink,AAPL,APPLE INC,10.046,$211.61 ,$1.47 ,"$2,125.83 ",$14.76 ,0.69%,$475.83 ,28.83%,1.13%,"$1,650.00 ",$164.24 ,Cash
+1234567,BrokerageLink,NVDA,NVIDIA CORPORATION COM,20.001,$109.15 ,$0.42 ,"$2,183.00 ",$8.30 ,0.38%,($155.67),-6.66%,1.16%,"$2,338.67 ",$116.93 ,Cash
+1234567,BrokerageLink,PTC,PTC INC,50,$154.11 ,$2.28 ,"$7,705.25 ",$113.75 ,1.49%,($662.30),-7.92%,4.08%,"$8,367.55 ",$167.35 ,Cash
+1234567,BrokerageLink,GOOGL,ALPHABET INC CAP STK CL A,10.012,$160.11 ,($0.50),"$1,603.02 ",($5.01),-0.32%,($266.78),-14.27%,0.85%,"$1,869.80 ",$186.76 ,Cash
+1234567,BrokerageLink,ANET,ARISTA NETWORKS INC COM SHS,100,$81.05 ,$2.74 ,"$8,105.00 ",$274.00 ,3.49%,"($1,740.36)",-17.68%,4.30%,"$9,845.36 ",$98.45 ,Cash
+1234567,BrokerageLink,TECH,BIO-TECHNE CORP COM,10.006,$50.54 ,$0.29 ,$505.70 ,$2.90 ,0.57%,($131.80),-20.68%,0.27%,$637.50 ,$63.71 ,Cash
+1234567,BrokerageLink,HAL,HALLIBURTON CO COM USD2.50,110.87,$20.50 ,($0.16),"$2,272.28 ",($17.19),-0.76%,($811.17),-26.31%,1.20%,"$3,083.45 ",$27.81 ,Cash
+1234567,BrokerageLink,FETH,FIDELITY ETHEREUM FUND,100,$18.23 ,$0.26 ,"$1,823.00 ",$26.00 ,1.44%,($741.00),-28.91%,0.97%,"$2,564.00 ",$25.64 ,Cash
+1234567,BrokerageLink,NVO,NOVO NORDISK A/S ADR-EACH CNV INTO 1 CLASS B DKK1,40.533,$65.16 ,$2.54 ,"$2,641.13 ",$102.95 ,4.05%,"($1,104.45)",-29.49%,1.40%,"$3,745.58 ",$92.41 ,Cash
+1234567,BrokerageLink,BIIB,BIOGEN INC COM USD0.0005,35,$120.26 ,$1.14 ,"$4,208.92 ",$39.72 ,0.95%,"($1,919.60)",-31.33%,2.23%,"$6,128.52 ",$175.10 ,Cash
+1234567,BrokerageLink,ARAY,ACCURAY INCORPORATED COM USD0.001,4000,$1.62 ,$0.01 ,"$6,480.00 ",$40.00 ,0.62%,"($3,741.06)",-36.61%,3.43%,"$10,221.06 ",$2.56 ,Cash
+1234567,BrokerageLink,DHX,DHI GROUP INC COM,1299,$1.47 ,$0.03 ,"$1,909.53 ",$38.97 ,2.08%,"($2,162.85)",-53.12%,1.01%,"$4,072.38 ",$3.14 ,Cash
+1234567,BrokerageLink,IRIX,IRIDEX CORP,2000,$1.18 ,($0.13),"$2,350.00 ",($250.00),-9.62%,"($4,037.60)",-63.21%,1.25%,"$6,387.60 ",$3.19 ,Cash
+,,,,,,,,,,,,,,,
+"The data and information in this spreadsheet is provided to you solely for your use and is not for distribution. The spreadsheet is provided for informational purposes only, and is not intended to provide advice, nor should it be construed as an offer to sell, a solicitation of an offer to buy or a recommendation for any security by Fidelity or any third party. Data and information shown is based on information known to Fidelity as of the date it was exported and is subject to change. It should not be used in place of your account statements or trade confirmations and is not intended for tax reporting purposes. For more information on the data included in this spreadsheet, including any limitations thereof, go to Fidelity.com.",,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,
+"Brokerage services are provided by Fidelity Brokerage Services LLC (FBS), 900 Salem Street, Smithfield, RI 02917. Custody and other services provided by National Financial Services LLC (NFS). Both are Fidelity Investment companies and members SIPC, NYSE. Neither FBS nor NFS offer crypto as a direct investment nor provide trading or custody services for such assets.",,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,
+Date downloaded Apr-29-2025 3:54 p.m ET,,,,,,,,,,,,,,,
