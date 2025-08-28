@@ -123,15 +123,15 @@ with st.sidebar:
 
 
 def calculate_portfolio_rebalance(
-    portfolio_df, amount, cash_to_invest, cash_to_withdraw, optimization_method
+    df, amount, cash_to_invest, cash_to_withdraw, optimization_method
 ):
     # Create DataFrame from user input
-    df_positions = portfolio_df.rename(columns={"Shares": "Quantity"})
+    df = df.rename(columns={"Shares": "Quantity"})
 
-    df = pd.DataFrame({"Symbol": portfolio_df["Symbol"].tolist()})
-    df = df.merge(df_positions, on="Symbol", how="left").fillna(
-        {"Description": "", "Quantity": 0, "Current Value": 0.0}
-    )
+    # df = pd.DataFrame({"Symbol": portfolio_df["Symbol"].tolist()})
+    # df = df.merge(df_positions, on="Symbol", how="left").fillna(
+    #     {"Current Value": 0.0}
+    # )
 
     # Fetch live or existing prices
     def fetch_price(row):
@@ -384,7 +384,7 @@ def plot_portfolio_growth(
         df,
         x="Date",
         y=y_columns,
-        title="Portfolio Growth vs SPX for 10k invested 5 years ago",
+        title="Equal Weight Portfolio Growth vs SPX for 10k invested 5 years ago",
     )
     st.plotly_chart(fig)
 
@@ -403,9 +403,22 @@ if st.button("Calculate"):
             st.success(
                 "Equal Weight Balaced portfolio performed better! Rebalancing recommendations will be based on the balanced portfolio."
             )
-            balanced_portfolio_df = pd.DataFrame(
-                {"Symbol": stocks_list, "Shares": [0] * len(stocks_list)}
+            # filter portfolio_df to only include stocks in the balanced portfolio
+            balanced_portfolio_df = portfolio_df[
+                portfolio_df["Symbol"].isin(stocks_list)
+            ]
+            # Add missing stocks from the balanced portfolio with 0 shares
+            missing_stocks = set(stocks_list) - set(
+                balanced_portfolio_df["Symbol"].tolist()
             )
+            for stock in missing_stocks:
+                balanced_portfolio_df = balanced_portfolio_df.append(
+                    {"Symbol": stock, "Shares": 0}, ignore_index=True
+                )
+            balanced_portfolio_df = balanced_portfolio_df.reset_index(drop=True)
+            # Ensure the balanced portfolio DataFrame has the same columns as portfolio_df
+            # balanced_portfolio_df = balanced_portfolio_df.reindex_like(portfolio_df)
+            # Calculate rebalancing for the balanced portfolio
             calculate_portfolio_rebalance(
                 balanced_portfolio_df,
                 amount,
@@ -425,6 +438,3 @@ if st.button("Calculate"):
                 cash_to_withdraw,
                 optimization_method,
             )
-
-# if st.button("Plot Portfolio Growth"):
-#     plot_portfolio_growth(stocks_list)

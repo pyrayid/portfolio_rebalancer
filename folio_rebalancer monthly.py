@@ -4,7 +4,8 @@ import yfinance as yf
 import os
 
 # === User inputs ===
-date = "May-23-2025"
+date = "Jun-27-2025"
+optimization_method = "Hierarchical Risk Parity"  # Options: "Equal Weight", "Hierarchical Risk Parity"
 cash_to_invest = 5000  # Cash to invest (0 to use pct)
 cash_to_invest_pct = 0.3  # Percentage of cash available to invest
 cash_to_withdraw = 0
@@ -42,6 +43,9 @@ stocks_list = [
     "CTAS",
     "PWR",
     "LLY",
+    "NVO",
+    "WELL",
+    "EQIX"
 ]
 
 # Load the portfolio CSV file
@@ -81,7 +85,9 @@ df = df.merge(df_positions, on="Symbol", how="left").fillna(
 
 
 # Fetch live or existing prices
+failed_downloads = 0
 def fetch_price(row):
+    global failed_downloads
     ticker = row["Symbol"]
     try:
         stock = yf.Ticker(ticker)
@@ -92,6 +98,7 @@ def fetch_price(row):
             print(f"Fetched price for {ticker}: {price}")
             return price
     except Exception as e:
+        failed_downloads += 1
         if "Too Many Requests. Rate limited. Try after a while." in str(e):
             print(f"Rate limit exceeded for {ticker}. Using Last Price.")
             return float(row["Last Price"].replace("$", "").replace(",", ""))
@@ -101,13 +108,44 @@ def fetch_price(row):
 
 
 df["price"] = df.apply(fetch_price, axis=1)
+
+if failed_downloads >= 1:
+    print("Too many failed downloads. Stopping execution.")
+    exit(1)
+
 df["Current Value"] = df["Quantity"] * df["price"]
 
 # === Buying logic ===
 
-# Equal weight for each ticker
-equal_weight = 1.0 / len(stocks_list)
-df["target_weight"] = equal_weight
+if optimization_method == "Equal Weight":
+    # Equal weight for each ticker
+    equal_weight = 1.0 / len(stocks_list)
+    df["target_weight"] = equal_weight
+elif optimization_method == "Hierarchical Risk Parity":
+    # HRP logic from folio_optimizer.py
+    from pypfopt.hierarchical_portfolio import HRPOpt
+    # from pypfopt.expected_returns import mean_historical_return
+    from pypfopt.risk_models import CovarianceShrinkage
+
+    # Fetch historical data
+    # Use 5 years of monthly data for HRP optimization
+    data = yf.download(stocks_list, period="60mo", progress=False)
+    monthly_prices = data["Close"].resample("ME").last().dropna()
+    returns = monthly_prices.pct_change().dropna()
+
+    # # Estimate expected returns and covariance matrix
+    # mu = mean_historical_return(monthly_prices)
+    S = CovarianceShrinkage(monthly_prices).ledoit_wolf()
+
+    # Hierarchical Risk Parity Portfolio
+    hrp = HRPOpt(returns, S)
+    hrp.optimize()
+    hrp_weights = hrp.clean_weights()
+
+    # Assign HRP weights to the DataFrame
+    df["target_weight"] = df["Symbol"].apply(
+        lambda x: hrp_weights.get(x, 0)
+    )  # Use get to handle missing keys
 
 # Compute current weights
 current_value_total = df["Current Value"].sum()
@@ -175,5 +213,6 @@ else:
 print(f"Cash available from FDRXX**: ${cash_available:,.2f}")
 print(f"Total cash to invest:        ${cash_to_invest:,.2f}")
 print(f"Total cash to withdraw:      ${cash_to_withdraw:,.2f}")
+print("Using optimization method:", optimization_method)
 # save to csv
-df.to_csv(f"files/Portfolio_Rebalance_{date}.csv", index=False)
+df.to_csv(f"files/Portfolio_Rebalance_{optimization_method}_{date}.csv", index=False)

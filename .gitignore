@@ -1,3 +1,6 @@
 /.venv
-/2025-05-29T03-04_export.csv
+/.env
+/.vscode
+/venv
+/files
 /portfolio_rebalancer.code-workspace
