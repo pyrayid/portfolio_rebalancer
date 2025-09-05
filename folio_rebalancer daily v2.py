@@ -60,7 +60,7 @@ stocks_list = [
 
 # === User inputs START ===
 
-date = "Aug-26-2025"  # Date for the portfolio file
+date = "Aug-29-2025"  # Date for the portfolio file
 optimization_method = (
     "Hierarchical Risk Parity"  # Options: "Equal Weight", "Hierarchical Risk Parity"
 )
@@ -151,6 +151,7 @@ df_positions = pd.read_csv(file_path)[
         "Last Price",
         "Current Value",
         "Cost Basis Total",
+        "Total Gain/Loss Dollar",
     ]
 ]
 df_positions = df_positions.dropna(subset=["Symbol"])
@@ -162,6 +163,10 @@ df_positions["Current Value"] = pd.to_numeric(
 )
 df_positions["Cost Basis Total"] = pd.to_numeric(
     df_positions["Cost Basis Total"].replace(r"[\$,]", "", regex=True), errors="coerce"
+)
+df_positions["Total Gain/Loss Dollar"] = pd.to_numeric(
+    df_positions["Total Gain/Loss Dollar"].replace(r"[\$,]", "", regex=True),
+    errors="coerce",
 )
 
 # Extract cash position (FDRXX**)
@@ -344,8 +349,11 @@ df["shares_to_sell"] = (-df["shares_to_trade"]).clip(lower=0)
 
 print("=" * 50)
 print(
-    f"Total portfolio value:            ${(current_value_total + cash_available):,.2f}"
+    f"Total portfolio + cash value:     ${(current_value_total + cash_available):,.2f}"
 )
+print(f"Total Gain/Loss value:            ${df['Total Gain/Loss Dollar'].sum():,.2f}")
+print(f"Total Gain/Loss %:                 {(df['Total Gain/Loss Dollar'].sum() / (current_value_total + cash_available) if current_value_total > 0 else np.nan):.2%}\n")
+
 print(f"Cash available (FDRXX**):         ${cash_available:,.2f}")
 print(f"Target cash ({cash_pct:.2%}):              ${target_cash:,.2f}")
 print(f"Total cash to invest:             ${cash_to_invest:,.2f}")
